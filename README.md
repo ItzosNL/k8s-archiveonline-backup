@@ -1,2 +1,2 @@
 # k8s-archiveonline-backup
-ZPM package to enable any Iris instance to archive its backups to Archive Online
+ZPM package to enable any Iris instance to archive its backups to Archive On Demand
