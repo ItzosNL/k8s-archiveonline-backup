@@ -5,9 +5,12 @@ Class AODBackup.Restore
 {
 
 /// Restore based on https://openexchange.intersystems.com/package/backupChecker
-/// TBD: Make work with our local paths
+/// TBD: Make work with AOD and our local paths
 ClassMethod RestoreAll(backupFile) As %Status [ PublicList = (INPDEV, TopDir, RESTYPE, QUIETMODE, ALLOWUPD, JRNOPT) ]
 {
+    new $NAMESPACE
+    set $NAMESPACE = "%SYS"
+    
     set INPDEV = "/ISC/utiles/Backup/" _ backupFile
 
     if '##class(%File).Exists(INPDEV)
