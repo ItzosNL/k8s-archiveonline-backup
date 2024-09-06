@@ -16,7 +16,7 @@ Property Type As %String;
 Property Status As %String;
 
 /// LOG=/irissys/data/IRIS/mgr/Backup/CumuIncrDBList_20240905_001.log
-/// LogFile that was created, usefull when the Srarus is '= Completed
+/// LogFile that was created, usefull when the Status '= Completed
 Property LogFile As %String(MAXLEN = "");
 
 /// DEVICE=/irissys/backups/CumuIncrDBList_20240905_001.cbk
@@ -68,7 +68,7 @@ ClassMethod ShowAll()
 }
 
 /// Get the Latesst backup, used right after that backup has run to know the name of backup file that was created.
-ClassMethod GetLatestBackup(ByRef qhandle As %String) As AODBackup.History
+ClassMethod GetLatestBackup(ByRef qhandle As %String = "") As AODBackup.History
 {
 	new $Namespace
 	set $Namespace = "%SYS"
