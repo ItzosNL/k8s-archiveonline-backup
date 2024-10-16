@@ -61,7 +61,7 @@ ClassMethod ShowAll()
 
     while record '= ""
     {
-        w "Backup at ",record.DateTime,": ",record.Type,",",record.BackupFile,",",record.Status,!
+        w "Backup at ",record.DateTime,": ",record.Type,",",record.BackupFile,",",record.LogFile,",",record.Status,!
 
         set record = ..GetPreviousBackup(.qhandle)
     }

@@ -6,14 +6,29 @@ Class AODBackup.Full Extends %SYS.Task.BackupFullDatabaseList
 /// Overwrite of OnTask method to add additonal logic
 Method OnTask() As %Status
 {
+    set OldIO = $IO
+    set OldMnemonic = ##class(%Library.Device).GetMnemonicRoutine()
+    set OldState = ##class(%Library.Device).ReDirectIO()
     set namespace = $NAMESPACE
     new $NAMESPACE
     set start = $HOROLOG
-	set sc = ##super() // Does switch permanently to the %SYS namespace
+	set sc = ##super() // Does switch permanently to the %SYS namespace and redirects IO to the backup log file!
     set end = $HOROLOG
     set $NAMESPACE = namespace // Switch back!
 
-    return ##class(AODBackup.TaskHelper).ProcessBackupTaskResults($this, sc, start, end)
+    // Switching back IO redirection:
+    if OldMnemonic '= ""
+    {
+        use OldIO::("^" _ OldMnemonic)
+    }
+    else
+    {
+        use OldIO
+    }
+
+    do ##class(%Library.Device).ReDirectIO(OldState)
+
+    return ##class(AODBackup.TaskHelper).ProcessBackupTaskResults(sc, start)
 }
 
 }
