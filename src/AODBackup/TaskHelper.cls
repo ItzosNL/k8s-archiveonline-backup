@@ -1,4 +1,4 @@
-Include %occErrors
+Include Ensemble
 
 /// Extended version of %SYS.Task.BackupCumulativeDatabaseList
 /// It copies the created file to a ArchivingOnDemand bucket
@@ -10,22 +10,31 @@ ClassMethod ProcessBackupTaskResults(sc As %Status, start As %String) As %Status
 {
     if $$$ISOK(sc)
     {
-        #dim record As AODBackup.History = ##class(AODBackup.History).GetLatestBackup()
+        #dim backup As AODBackup.History = ##class(AODBackup.History).GetLatestBackup()
 
         set ^AAADebug = {
-            "datetime": (record.DateTime),
-            "type": (record.Type),
-            "status": (record.Status),
-            "log": (record.LogFile),
-            "backupFile": (record.BackupFile)
+            "datetime": (backup.DateTime),
+            "type": (backup.Type),
+            "status": (backup.Status),
+            "log": (backup.LogFile),
+            "backupFile": (backup.BackupFile)
         }.%ToJSON()
 
-        if record.Status '= "Completed"
+        // Send the file to ArchiveOnDemand
+        set sc = ##class(AODBackup.BS.UploadService).UploadFile(backup.BackupFile)
+
+        if $$$ISERR(sc)
         {
-            set sc = $$$ERROR($$$GeneralError, "Backup finished with Status " _ record.Status _ ", please check attached logFile.")
+            $$$TRACE("Upload of backup file " _ backup.BackupFile _ " failed: " _ $SYSTEM.Status.GetErrorText(sc))
+            return sc
         }
 
-        do ..CopyFileToStdout(record.LogFile)
+        if backup.Status '= "Completed"
+        {
+            set sc = $$$ERROR($$$GeneralError, "Backup finished with Status " _ backup.Status _ ", please check attached logFile.")
+        }
+
+        do ..CopyFileToStdout(backup.LogFile)
     }
 
 	return sc
