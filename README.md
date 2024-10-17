@@ -9,7 +9,7 @@ The package is loaded directly from gihub using the after-install.json configura
               "owner": "ItzosNL",
               "repo": "k8s-archiveonline-backup",
               "config": {
-                "folder": "altrecht-o"
+                "folder": "altrecht-o/"
               }
             }
         }
