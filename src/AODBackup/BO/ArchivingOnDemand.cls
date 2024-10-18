@@ -13,8 +13,8 @@ Property Filename As %String(MAXLEN = 1000, MINLEN = 1) [ InitialExpression = "%
 /// EndpointURL
 Property EndpointURL As %String(MAXLEN = 100) [ InitialExpression = "https://hs3-265.shcp03.archivingondemand.nl" ];
 
-/// Bucketname
-Property BucketName As %String(MAXLEN = 100) [ InitialExpression = "ehealth-mkls" ];
+/// Bucketname (default for backups)
+Property BucketName As %String(MAXLEN = 100) [ InitialExpression = "ehealth-iris-bu" ];
 
 /// Path Prefix - must must end with /!
 Property Prefix As %String(MAXLEN = 100);
@@ -69,26 +69,6 @@ Method UploadFileFromStream(pRequest As Ens.StreamContainer, Output pResponse As
 	return sc
 }
 
-/// Upload file from filesystem to S3
-Method UploadFileFromFilesystem(pRequest As AODBackup.Msg.UploadFileRequest, Output pResponse As Ens.Response) As %Status
-{
-	set sc = $$$OK
-
-	try
-    {
-        set stream = ##class(%Stream.FileCharacter).%New()
-        $$$ThrowOnError(stream.LinkToFile(pRequest.OriginalFilename))
-        set tFilename = ##class(Ens.Util.Time).FormatDateTime(..Filename, $PIECE(pRequest.OriginalFilename, "/", *)) 
-        set sc = ..UploadFileHelper(tFilename, stream)
-	}
-	catch (ex)
-    {
-		set sc = ex.AsStatus()
-	}
-
-	return sc
-}
-
 /// Uploads a file to Amazon S3, using the Python boto3 library.
 Method UploadFileHelper(key As %String, stream As %Stream.Object) As %Status [ Language = python ]
 {
@@ -127,6 +107,66 @@ Method UploadFileHelper(key As %String, stream As %Stream.Object) As %Status [ L
         )
 
         self.Trace(str(rsp))
+
+    except Exception as err: 
+        self.Trace(traceback.format_exc())
+        return self.PythonExceptionAsStatus(err)
+
+    return 1
+}
+
+/// Upload file from filesystem to S3
+Method UploadFileFromFilesystem(pRequest As AODBackup.Msg.UploadFileRequest, Output pResponse As Ens.Response) As %Status
+{
+	set sc = $$$OK
+
+	try
+    {
+        set key = ##class(Ens.Util.Time).FormatDateTime(..Filename, $PIECE(pRequest.OriginalFilename, "/", *)) 
+        set sc = ..UploadLargeFile(pRequest.OriginalFilename, key)
+	}
+	catch (ex)
+    {
+		set sc = ex.AsStatus()
+	}
+
+	return sc
+}
+
+/// Uploads a large file directly from the filesystem to Amazon S3, using the Python boto3 library.
+Method UploadLargeFile(filename As %String, key As %String) As %Status [ Language = python ]
+{
+    import traceback
+    import os
+    import io
+    import json
+    import boto3
+    from botocore.utils import fix_s3_host
+    from boto3.s3.transfer import TransferConfig
+    from boto3.s3.transfer import S3Transfer
+
+    resource = boto3.resource('s3')
+    resource.meta.client.meta.events.unregister('before-sign.s3', fix_s3_host)
+
+    # set up the S3 client
+    session = boto3.session.Session()
+    client = session.client(
+        service_name='s3',
+        endpoint_url = self.EndpointURL,
+        aws_access_key_id=self.AwsAccessKey,
+        aws_secret_access_key=self.AwsSecretKey
+    )
+
+    try:
+        config = TransferConfig(multipart_threshold=1024*1024*8, max_concurrency=10, multipart_chunksize=1024*1024*8, use_threads=True)
+
+        transfer = S3Transfer(client, config)
+        transfer.upload_file(
+            filename, 
+            self.BucketName,
+            '/'+ self.Prefix + key,
+            extra_args={ 'ACL': 'bucket-owner-full-control', 'ContentType': 'application/octet-stream' } 
+            )
 
     except Exception as err: 
         self.Trace(traceback.format_exc())

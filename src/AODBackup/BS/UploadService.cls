@@ -7,7 +7,7 @@ Parameter ServiceName = "UploadService";
 
 Parameter SETTINGS = "ArchivingOnDemand:Targets";
 
-Property ArchivingOnDemand As Ens.DataType.ConfigName [ InitialExpression = "ArchivingOnDemand" ];
+Property ArchivingOnDemand As Ens.DataType.ConfigName [ InitialExpression = "GZip" ];
 
 /// This method is called from 
 Method OnProcessInput(pInput As AODBackup.Msg.UploadFileRequest, Output pOutput As Ens.Response) As %Status
