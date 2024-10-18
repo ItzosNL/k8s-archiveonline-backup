@@ -3,7 +3,7 @@ Class AODBackup.Manifest
 {
 
 /// Package version - Must match with the release tag!
-Parameter VERSION As STRING = "0.0.1-002";
+Parameter VERSION As STRING = "0.1.0-001";
 
 Parameter Description As STRING = "This package enables an Iris instance to archive its backups to ArchivingOnDemand";
 
